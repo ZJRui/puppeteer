@@ -15,17 +15,9 @@
  */
 
 import {ChildProcess} from 'child_process';
+
 import {Protocol} from 'devtools-protocol';
-import {assert} from '../util/assert.js';
-import {CDPSession, Connection, ConnectionEmittedEvents} from './Connection.js';
-import {waitWithTimeout} from './util.js';
-import {Page} from '../api/Page.js';
-import {Viewport} from './PuppeteerViewport.js';
-import {Target} from './Target.js';
-import {TaskQueue} from './TaskQueue.js';
-import {TargetManager, TargetManagerEmittedEvents} from './TargetManager.js';
-import {ChromeTargetManager} from './ChromeTargetManager.js';
-import {FirefoxTargetManager} from './FirefoxTargetManager.js';
+
 import {
   Browser as BrowserBase,
   BrowserCloseCallback,
@@ -39,6 +31,17 @@ import {
   Permission,
 } from '../api/Browser.js';
 import {BrowserContext} from '../api/BrowserContext.js';
+import {Page} from '../api/Page.js';
+import {assert} from '../util/assert.js';
+
+import {ChromeTargetManager} from './ChromeTargetManager.js';
+import {CDPSession, Connection, ConnectionEmittedEvents} from './Connection.js';
+import {FirefoxTargetManager} from './FirefoxTargetManager.js';
+import {Viewport} from './PuppeteerViewport.js';
+import {Target} from './Target.js';
+import {TargetManager, TargetManagerEmittedEvents} from './TargetManager.js';
+import {TaskQueue} from './TaskQueue.js';
+import {waitWithTimeout} from './util.js';
 
 /**
  * @internal
@@ -564,6 +567,7 @@ export class CDPBrowser extends BrowserBase {
   override disconnect(): void {
     this.#targetManager.dispose();
     this.#connection.dispose();
+    this._detach();
   }
 
   /**
@@ -623,7 +627,7 @@ export class CDPBrowserContext extends BrowserContext {
    * ```
    *
    * @param predicate - A function to be run for every target
-   * @param options - An object of options. Accepts a timout,
+   * @param options - An object of options. Accepts a timeout,
    * which is the maximum wait time in milliseconds.
    * Pass `0` to disable the timeout. Defaults to 30 seconds.
    * @returns Promise which resolves to the first target found

@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
+import fs from 'fs';
+import path from 'path';
+
 import {
   MochaTestResult,
   TestExpectation,
   MochaResults,
   TestResult,
 } from './types.js';
-import path from 'path';
-import fs from 'fs';
 
 export function extendProcessEnv(envs: object[]): NodeJS.ProcessEnv {
   return envs.reduce(
@@ -56,12 +57,30 @@ export function prettyPrintJSON(json: unknown): void {
   console.log(JSON.stringify(json, null, 2));
 }
 
+export function printSuggestions(
+  recommendations: RecommendedExpectation[],
+  action: RecommendedExpectation['action'],
+  message: string
+): void {
+  const toPrint = recommendations.filter(item => {
+    return item.action === action;
+  });
+  if (toPrint.length) {
+    console.log(message);
+    prettyPrintJSON(
+      toPrint.map(item => {
+        return item.expectation;
+      })
+    );
+  }
+}
+
 export function filterByParameters(
-  expecations: TestExpectation[],
+  expectations: TestExpectation[],
   parameters: string[]
 ): TestExpectation[] {
   const querySet = new Set(parameters);
-  return expecations.filter(ex => {
+  return expectations.filter(ex => {
     return ex.parameters.every(param => {
       return querySet.has(param);
     });
@@ -69,85 +88,121 @@ export function filterByParameters(
 }
 
 /**
- * The last expectation that matches the startsWith filter wins.
+ * The last expectation that matches an empty string as all tests pattern
+ * or the name of the file or the whole name of the test the filter wins.
  */
-export function findEffectiveExpecationForTest(
+export function findEffectiveExpectationForTest(
   expectations: TestExpectation[],
   result: MochaTestResult
 ): TestExpectation | undefined {
   return expectations
-    .filter(expecation => {
-      if (
-        getTestId(result.file, result.fullTitle).startsWith(
-          expecation.testIdPattern
-        )
-      ) {
-        return true;
-      }
-      return false;
+    .filter(expectation => {
+      return (
+        '' === expectation.testIdPattern ||
+        getTestId(result.file) === expectation.testIdPattern ||
+        getTestId(result.file, result.fullTitle) === expectation.testIdPattern
+      );
     })
     .pop();
 }
 
-type RecommendedExpecation = {
+type RecommendedExpectation = {
   expectation: TestExpectation;
-  test: MochaTestResult;
   action: 'remove' | 'add' | 'update';
 };
 
+export function isWildCardPattern(testIdPattern: string): boolean {
+  testIdPattern = testIdPattern.trim();
+  return (
+    testIdPattern === '' ||
+    Boolean(testIdPattern.match(/^\[[a-zA-Z]+\.spec\]$/))
+  );
+}
+
 export function getExpectationUpdates(
   results: MochaResults,
-  expecations: TestExpectation[],
+  expectations: TestExpectation[],
   context: {
     platforms: NodeJS.Platform[];
     parameters: string[];
   }
-): RecommendedExpecation[] {
-  const output: RecommendedExpecation[] = [];
+): RecommendedExpectation[] {
+  const output: Map<string, RecommendedExpectation> = new Map();
 
   for (const pass of results.passes) {
-    const expectation = findEffectiveExpecationForTest(expecations, pass);
-    if (expectation && !expectation.expectations.includes('PASS')) {
-      output.push({
-        expectation,
-        test: pass,
+    // If an error occurs during a hook
+    // the error not have a file associated with it
+    if (!pass.file) {
+      continue;
+    }
+
+    const expectationEntry = findEffectiveExpectationForTest(
+      expectations,
+      pass
+    );
+    if (expectationEntry && !expectationEntry.expectations.includes('PASS')) {
+      addEntry({
+        expectation: expectationEntry,
         action: 'remove',
       });
     }
   }
 
   for (const failure of results.failures) {
-    const expectation = findEffectiveExpecationForTest(expecations, failure);
-    if (expectation) {
+    // If an error occurs during a hook
+    // the error not have a file associated with it
+    if (!failure.file) {
+      continue;
+    }
+
+    const expectationEntry = findEffectiveExpectationForTest(
+      expectations,
+      failure
+    );
+    // If the effective explanation is a wildcard, we recommend adding a new
+    // expectation instead of updating the wildcard that might affect multiple
+    // tests.
+    if (
+      expectationEntry &&
+      !isWildCardPattern(expectationEntry.testIdPattern)
+    ) {
       if (
-        !expectation.expectations.includes(getTestResultForFailure(failure))
+        !expectationEntry.expectations.includes(
+          getTestResultForFailure(failure)
+        )
       ) {
-        output.push({
+        addEntry({
           expectation: {
-            ...expectation,
+            ...expectationEntry,
             expectations: [
-              ...expectation.expectations,
+              ...expectationEntry.expectations,
               getTestResultForFailure(failure),
             ],
           },
-          test: failure,
           action: 'update',
         });
       }
     } else {
-      output.push({
+      addEntry({
         expectation: {
           testIdPattern: getTestId(failure.file, failure.fullTitle),
           platforms: context.platforms,
           parameters: context.parameters,
           expectations: [getTestResultForFailure(failure)],
         },
-        test: failure,
         action: 'add',
       });
     }
   }
-  return output;
+
+  function addEntry(value: RecommendedExpectation) {
+    const key = JSON.stringify(value);
+    if (!output.has(key)) {
+      output.set(key, value);
+    }
+  }
+
+  return [...output.values()];
 }
 
 export function getTestResultForFailure(
@@ -156,6 +211,8 @@ export function getTestResultForFailure(
   return test.err?.code === 'ERR_MOCHA_TIMEOUT' ? 'TIMEOUT' : 'FAIL';
 }
 
-export function getTestId(file: string, fullTitle: string): string {
-  return `[${getFilename(file)}] ${fullTitle}`;
+export function getTestId(file: string, fullTitle?: string): string {
+  return fullTitle
+    ? `[${getFilename(file)}] ${fullTitle}`
+    : `[${getFilename(file)}]`;
 }

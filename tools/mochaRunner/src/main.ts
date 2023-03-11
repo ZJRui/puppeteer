@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+import fs from 'fs';
+import {spawn, SpawnOptions} from 'node:child_process';
+import os from 'os';
+import path from 'path';
+
 import {
   TestExpectation,
   MochaResults,
@@ -23,18 +28,13 @@ import {
   TestSuiteFile,
   Platform,
 } from './types.js';
-
-import path from 'path';
-import fs from 'fs';
-import os from 'os';
-import {spawn, SpawnOptions} from 'node:child_process';
 import {
   extendProcessEnv,
   filterByPlatform,
-  prettyPrintJSON,
   readJSON,
   filterByParameters,
   getExpectationUpdates,
+  printSuggestions,
 } from './utils.js';
 
 function getApplicableTestSuites(
@@ -71,6 +71,7 @@ function getApplicableTestSuites(
 
 async function main() {
   const noCoverage = process.argv.indexOf('--no-coverage') !== -1;
+  const noSuggestions = process.argv.indexOf('--no-suggestions') !== -1;
 
   const statsFilenameIdx = process.argv.indexOf('--save-stats-to');
   let statsFilename = '';
@@ -106,9 +107,22 @@ async function main() {
         parameters
       );
 
+      // Add more logging when the GitHub Action Debugging option is set
+      // https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables
+      const githubActionDebugging = process.env['RUNNER_DEBUG']
+        ? {
+            DEBUG: 'puppeteer:*',
+            EXTRA_LAUNCH_OPTIONS: JSON.stringify({
+              extraPrefsFirefox: {
+                'remote.log.level': 'Trace',
+              },
+            }),
+          }
+        : {};
+
       const env = extendProcessEnv([
         ...parameters.map(param => {
-          return parsedSuitesFile.parameterDefinitons[param];
+          return parsedSuitesFile.parameterDefinitions[param];
         }),
         {
           PUPPETEER_SKIPPED_TEST_CONFIG: JSON.stringify(
@@ -120,6 +134,7 @@ async function main() {
             })
           ),
         },
+        githubActionDebugging,
       ]);
 
       const tmpDir = fs.mkdtempSync(
@@ -129,14 +144,31 @@ async function main() {
         ? statsFilename
         : path.join(tmpDir, 'output.json');
       console.log('Running', JSON.stringify(parameters), tmpFilename);
+      const reporterArgumentIndex = process.argv.indexOf('--reporter');
       const args = [
         '-u',
         path.join(__dirname, 'interface.js'),
         '-R',
-        path.join(__dirname, 'reporter.js'),
+        reporterArgumentIndex === -1
+          ? path.join(__dirname, 'reporter.js')
+          : process.argv[reporterArgumentIndex + 1] || '',
         '-O',
         'output=' + tmpFilename,
       ];
+      const retriesArgumentIndex = process.argv.indexOf('--retries');
+      const timeoutArgumentIndex = process.argv.indexOf('--timeout');
+      if (retriesArgumentIndex > -1) {
+        args.push('--retries', process.argv[retriesArgumentIndex + 1] || '');
+      }
+      if (timeoutArgumentIndex > -1) {
+        args.push('--timeout', process.argv[timeoutArgumentIndex + 1] || '');
+      }
+      if (process.argv.indexOf('--no-parallel')) {
+        args.push('--no-parallel');
+      }
+      if (process.argv.indexOf('--fullTrace')) {
+        args.push('--fullTrace');
+      }
       const spawnArgs: SpawnOptions = {
         shell: true,
         cwd: process.cwd(),
@@ -180,7 +212,7 @@ async function main() {
           fail = true;
           recommendations.push(...recommendation);
         } else {
-          console.log('Test run matches expecations');
+          console.log('Test run matches expectations');
           continue;
         }
       } catch (err) {
@@ -192,43 +224,21 @@ async function main() {
     fail = true;
     console.error(err);
   } finally {
-    const toAdd = recommendations.filter(item => {
-      return item.action === 'add';
-    });
-    if (toAdd.length) {
-      console.log(
-        'Add the following to TestExpecations.json to ignore the error:'
+    if (!noSuggestions) {
+      printSuggestions(
+        recommendations,
+        'add',
+        'Add the following to TestExpectations.json to ignore the error:'
       );
-      prettyPrintJSON(
-        toAdd.map(item => {
-          return item.expectation;
-        })
+      printSuggestions(
+        recommendations,
+        'remove',
+        'Remove the following from the TestExpectations.json to ignore the error:'
       );
-    }
-    const toRemove = recommendations.filter(item => {
-      return item.action === 'remove';
-    });
-    if (toRemove.length) {
-      console.log(
-        'Remove the following from the TestExpecations.json to ignore the error:'
-      );
-      prettyPrintJSON(
-        toRemove.map(item => {
-          return item.expectation;
-        })
-      );
-    }
-    const toUpdate = recommendations.filter(item => {
-      return item.action === 'update';
-    });
-    if (toUpdate.length) {
-      console.log(
-        'Update the following expectations in the TestExpecations.json to ignore the error:'
-      );
-      prettyPrintJSON(
-        toUpdate.map(item => {
-          return item.expectation;
-        })
+      printSuggestions(
+        recommendations,
+        'update',
+        'Update the following expectations in the TestExpectations.json to ignore the error:'
       );
     }
     process.exit(fail ? 1 : 0);

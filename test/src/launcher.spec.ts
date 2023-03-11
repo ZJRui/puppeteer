@@ -13,23 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import Protocol from 'devtools-protocol';
-import expect from 'expect';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import {TLSSocket} from 'tls';
+import {promisify} from 'util';
+
+import {Protocol} from 'devtools-protocol';
+import expect from 'expect';
 import {BrowserFetcher, TimeoutError} from 'puppeteer';
 import {Page} from 'puppeteer-core/internal/api/Page.js';
 import rimraf from 'rimraf';
 import sinon from 'sinon';
-import {TLSSocket} from 'tls';
-import {promisify} from 'util';
+
 import {getTestState, itOnlyRegularInstall} from './mocha-utils.js';
 import utils from './utils.js';
 
+const rmAsync = (filename: string) => {
+  return rimraf(filename);
+};
 const mkdtempAsync = promisify(fs.mkdtemp);
 const readFileAsync = promisify(fs.readFile);
-const rmAsync = promisify(rimraf);
 const statAsync = promisify(fs.stat);
 const writeFileAsync = promisify(fs.writeFile);
 

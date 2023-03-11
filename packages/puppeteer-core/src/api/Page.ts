@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-import {Protocol} from 'devtools-protocol';
 import type {Readable} from 'stream';
+
+import {Protocol} from 'devtools-protocol';
+
 import type {Accessibility} from '../common/Accessibility.js';
 import type {ConsoleMessage} from '../common/ConsoleMessage.js';
 import type {Coverage} from '../common/Coverage.js';
 import {Device} from '../common/Device.js';
 import type {Dialog} from '../common/Dialog.js';
-import type {ElementHandle} from '../common/ElementHandle.js';
 import {EventEmitter, Handler} from '../common/EventEmitter.js';
 import type {FileChooser} from '../common/FileChooser.js';
 import type {
@@ -39,17 +40,24 @@ import type {
   Touchscreen,
 } from '../common/Input.js';
 import type {WaitForSelectorOptions} from '../common/IsolatedWorld.js';
-import type {JSHandle} from '../common/JSHandle.js';
 import type {PuppeteerLifeCycleEvent} from '../common/LifecycleWatcher.js';
 import type {Credentials, NetworkConditions} from '../common/NetworkManager.js';
 import type {PDFOptions} from '../common/PDFOptions.js';
 import type {Viewport} from '../common/PuppeteerViewport.js';
 import type {Target} from '../common/Target.js';
 import type {Tracing} from '../common/Tracing.js';
-import type {EvaluateFunc, HandleFor, NodeFor} from '../common/types.js';
+import type {
+  EvaluateFunc,
+  EvaluateFuncWith,
+  HandleFor,
+  NodeFor,
+} from '../common/types.js';
 import type {WebWorker} from '../common/WebWorker.js';
+
 import type {Browser} from './Browser.js';
 import type {BrowserContext} from './BrowserContext.js';
+import type {ElementHandle} from './ElementHandle.js';
+import type {JSHandle} from './JSHandle.js';
 
 /**
  * @public
@@ -263,7 +271,7 @@ export const enum PageEmittedEvents {
    * Contains an object with two properties:
    *
    * - `title`: the title passed to `console.timeStamp`
-   * - `metrics`: objec containing metrics as key/value pairs. The values will
+   * - `metrics`: object containing metrics as key/value pairs. The values will
    *   be `number`s.
    */
   Metrics = 'metrics',
@@ -390,7 +398,7 @@ export interface PageEventObject {
  * This example creates a page, navigates it to a URL, and then saves a screenshot:
  *
  * ```ts
- * const puppeteer = require('puppeteer');
+ * import puppeteer from 'puppeteer';
  *
  * (async () => {
  *   const browser = await puppeteer.launch();
@@ -425,7 +433,7 @@ export interface PageEventObject {
  * @public
  */
 export class Page extends EventEmitter {
-  #handlerMap = new WeakMap<Handler, Handler>();
+  #handlerMap = new WeakMap<Handler<any>, Handler<any>>();
 
   /**
    * @internal
@@ -628,8 +636,6 @@ export class Page extends EventEmitter {
    * Once request interception is enabled, every request will stall unless it's
    * continued, responded or aborted; or completed using the browser cache.
    *
-   * Enabling request interception disables page caching.
-   *
    * See the
    * {@link https://pptr.dev/next/guides/request-interception|Request interception guide}
    * for more details.
@@ -638,7 +644,7 @@ export class Page extends EventEmitter {
    * An example of a naïve request interceptor that aborts all image requests:
    *
    * ```ts
-   * const puppeteer = require('puppeteer');
+   * import puppeteer from 'puppeteer';
    * (async () => {
    *   const browser = await puppeteer.launch();
    *   const page = await browser.newPage();
@@ -799,7 +805,7 @@ export class Page extends EventEmitter {
    * `page.evaluateHandle` is that `evaluateHandle` will return the value
    * wrapped in an in-page object.
    *
-   * If the function passed to `page.evaluteHandle` returns a Promise, the
+   * If the function passed to `page.evaluateHandle` returns a Promise, the
    * function will wait for the promise to resolve and return its value.
    *
    * You can pass a string instead of a function (although functions are
@@ -958,21 +964,16 @@ export class Page extends EventEmitter {
   async $eval<
     Selector extends string,
     Params extends unknown[],
-    Func extends EvaluateFunc<
-      [ElementHandle<NodeFor<Selector>>, ...Params]
-    > = EvaluateFunc<[ElementHandle<NodeFor<Selector>>, ...Params]>
+    Func extends EvaluateFuncWith<NodeFor<Selector>, Params> = EvaluateFuncWith<
+      NodeFor<Selector>,
+      Params
+    >
   >(
     selector: Selector,
     pageFunction: Func | string,
     ...args: Params
   ): Promise<Awaited<ReturnType<Func>>>;
-  async $eval<
-    Selector extends string,
-    Params extends unknown[],
-    Func extends EvaluateFunc<
-      [ElementHandle<NodeFor<Selector>>, ...Params]
-    > = EvaluateFunc<[ElementHandle<NodeFor<Selector>>, ...Params]>
-  >(): Promise<Awaited<ReturnType<Func>>> {
+  async $eval(): Promise<unknown> {
     throw new Error('Not implemented');
   }
 
@@ -1041,21 +1042,16 @@ export class Page extends EventEmitter {
   async $$eval<
     Selector extends string,
     Params extends unknown[],
-    Func extends EvaluateFunc<
-      [Array<NodeFor<Selector>>, ...Params]
-    > = EvaluateFunc<[Array<NodeFor<Selector>>, ...Params]>
+    Func extends EvaluateFuncWith<
+      Array<NodeFor<Selector>>,
+      Params
+    > = EvaluateFuncWith<Array<NodeFor<Selector>>, Params>
   >(
     selector: Selector,
     pageFunction: Func | string,
     ...args: Params
   ): Promise<Awaited<ReturnType<Func>>>;
-  async $$eval<
-    Selector extends string,
-    Params extends unknown[],
-    Func extends EvaluateFunc<
-      [Array<NodeFor<Selector>>, ...Params]
-    > = EvaluateFunc<[Array<NodeFor<Selector>>, ...Params]>
-  >(): Promise<Awaited<ReturnType<Func>>> {
+  async $$eval(): Promise<unknown> {
     throw new Error('Not implemented');
   }
 
@@ -1125,7 +1121,7 @@ export class Page extends EventEmitter {
    * a `<style type="text/css">` tag with the content.
    *
    * Shortcut for
-   * {@link Frame.addStyleTag | page.mainFrame().addStyleTag(options)}.
+   * {@link Frame.(addStyleTag:2) | page.mainFrame().addStyleTag(options)}.
    *
    * @returns An {@link ElementHandle | element handle} to the injected `<link>`
    * or `<style>` element.
@@ -1163,8 +1159,8 @@ export class Page extends EventEmitter {
    * An example of adding an `md5` function into the page:
    *
    * ```ts
-   * const puppeteer = require('puppeteer');
-   * const crypto = require('crypto');
+   * import puppeteer from 'puppeteer';
+   * import crypto from 'crypto';
    *
    * (async () => {
    *   const browser = await puppeteer.launch();
@@ -1187,8 +1183,8 @@ export class Page extends EventEmitter {
    * An example of adding a `window.readfile` function into the page:
    *
    * ```ts
-   * const puppeteer = require('puppeteer');
-   * const fs = require('fs');
+   * import puppeteer from 'puppeteer';
+   * import fs from 'fs';
    *
    * (async () => {
    *   const browser = await puppeteer.launch();
@@ -1383,6 +1379,9 @@ export class Page extends EventEmitter {
    *
    * - `referer` : Referer header value. If provided it will take preference
    *   over the referer header value set by
+   *   {@link Page.setExtraHTTPHeaders |page.setExtraHTTPHeaders()}.<br/>
+   * - `referrerPolicy` : ReferrerPolicy. If provided it will take preference
+   *   over the referer-policy header value set by
    *   {@link Page.setExtraHTTPHeaders |page.setExtraHTTPHeaders()}.
    *
    * `page.goto` will throw an error if:
@@ -1410,7 +1409,7 @@ export class Page extends EventEmitter {
    */
   async goto(
     url: string,
-    options?: WaitForOptions & {referer?: string}
+    options?: WaitForOptions & {referer?: string; referrerPolicy?: string}
   ): Promise<HTTPResponse | null>;
   async goto(): Promise<HTTPResponse | null> {
     throw new Error('Not implemented');
@@ -1867,7 +1866,7 @@ export class Page extends EventEmitter {
    * @example
    *
    * ```ts
-   * const puppeteer = require('puppeteer');
+   * import puppeteer from 'puppeteer';
    *
    * (async () => {
    *   const browser = await puppeteer.launch();
@@ -1948,7 +1947,7 @@ export class Page extends EventEmitter {
    *
    * - `height`: page's height in pixels
    *
-   * - `deviceScalarFactor`: Specify device scale factor (can be though of as
+   * - `deviceScaleFactor`: Specify device scale factor (can be though of as
    *   dpr). Defaults to `1`.
    *
    * - `isMobile`: Whether the meta viewport tag is taken into account. Defaults
@@ -1967,7 +1966,7 @@ export class Page extends EventEmitter {
   /**
    * Evaluates a function in the page's context and returns the result.
    *
-   * If the function passed to `page.evaluteHandle` returns a Promise, the
+   * If the function passed to `page.evaluateHandle` returns a Promise, the
    * function will wait for the promise to resolve and return its value.
    *
    * @example
@@ -2125,6 +2124,12 @@ export class Page extends EventEmitter {
    * @returns Promise which resolves to buffer or a base64 string (depending on
    * the value of `encoding`) with captured screenshot.
    */
+  screenshot(
+    options: ScreenshotOptions & {encoding: 'base64'}
+  ): Promise<string>;
+  screenshot(
+    options?: ScreenshotOptions & {encoding?: 'binary'}
+  ): Promise<Buffer>;
   async screenshot(options?: ScreenshotOptions): Promise<Buffer | string>;
   async screenshot(): Promise<Buffer | string> {
     throw new Error('Not implemented');
@@ -2373,7 +2378,7 @@ export class Page extends EventEmitter {
    * This method works across navigations:
    *
    * ```ts
-   * const puppeteer = require('puppeteer');
+   * import puppeteer from 'puppeteer';
    * (async () => {
    *   const browser = await puppeteer.launch();
    *   const page = await browser.newPage();
@@ -2400,9 +2405,9 @@ export class Page extends EventEmitter {
    * is added to DOM. Resolves to `null` if waiting for hidden: `true` and
    * selector is not found in DOM.
    * @remarks
-   * The optional Parameter in Arguments `options` are :
+   * The optional Parameter in Arguments `options` are:
    *
-   * - `Visible`: A boolean wait for element to be present in DOM and to be
+   * - `visible`: A boolean wait for element to be present in DOM and to be
    *   visible, i.e. to not have `display: none` or `visibility: hidden` CSS
    *   properties. Defaults to `false`.
    *
@@ -2433,7 +2438,7 @@ export class Page extends EventEmitter {
    * This method works across navigation
    *
    * ```ts
-   * const puppeteer = require('puppeteer');
+   * import puppeteer from 'puppeteer';
    * (async () => {
    *   const browser = await puppeteer.launch();
    *   const page = await browser.newPage();
@@ -2458,7 +2463,7 @@ export class Page extends EventEmitter {
    * @param options - Optional waiting parameters
    * @returns Promise which resolves when element specified by xpath string is
    * added to DOM. Resolves to `null` if waiting for `hidden: true` and xpath is
-   * not found in DOM.
+   * not found in DOM, otherwise resolves to `ElementHandle`.
    * @remarks
    * The optional Argument `options` have properties:
    *
@@ -2476,11 +2481,7 @@ export class Page extends EventEmitter {
    */
   waitForXPath(
     xpath: string,
-    options?: {
-      visible?: boolean;
-      hidden?: boolean;
-      timeout?: number;
-    }
+    options?: WaitForSelectorOptions
   ): Promise<ElementHandle<Node> | null>;
   waitForXPath(): Promise<ElementHandle<Node> | null> {
     throw new Error('Not implemented');
@@ -2493,7 +2494,7 @@ export class Page extends EventEmitter {
    * The {@link Page.waitForFunction} can be used to observe viewport size change:
    *
    * ```ts
-   * const puppeteer = require('puppeteer');
+   * import puppeteer from 'puppeteer';
    * (async () => {
    *   const browser = await puppeteer.launch();
    *   const page = await browser.newPage();

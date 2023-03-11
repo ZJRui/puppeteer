@@ -14,36 +14,65 @@
  * limitations under the License.
  */
 
+import * as Bidi from 'chromium-bidi/lib/cjs/protocol/protocol.js';
+
+import {ConnectionCallback} from '../Connection.js';
+import {ConnectionTransport} from '../ConnectionTransport.js';
 import {debug} from '../Debug.js';
+import {ProtocolError} from '../Errors.js';
+import {EventEmitter} from '../EventEmitter.js';
+
+import {Context} from './Context.js';
+
 const debugProtocolSend = debug('puppeteer:webDriverBiDi:SEND ►');
 const debugProtocolReceive = debug('puppeteer:webDriverBiDi:RECV ◀');
 
-import {ConnectionTransport} from '../ConnectionTransport.js';
-import {EventEmitter} from '../EventEmitter.js';
-import {ProtocolError} from '../Errors.js';
-import {ConnectionCallback} from '../Connection.js';
+/**
+ * @internal
+ */
+interface Commands {
+  'script.evaluate': {
+    params: Bidi.Script.EvaluateParameters;
+    returnType: Bidi.Script.EvaluateResult;
+  };
+  'script.callFunction': {
+    params: Bidi.Script.CallFunctionParameters;
+    returnType: Bidi.Script.CallFunctionResult;
+  };
+  'script.disown': {
+    params: Bidi.Script.DisownParameters;
+    returnType: Bidi.Script.DisownResult;
+  };
 
-interface Command {
-  id: number;
-  method: string;
-  params: object;
-}
+  'browsingContext.create': {
+    params: Bidi.BrowsingContext.CreateParameters;
+    returnType: Bidi.BrowsingContext.CreateResult;
+  };
+  'browsingContext.close': {
+    params: Bidi.BrowsingContext.CloseParameters;
+    returnType: Bidi.BrowsingContext.CloseResult;
+  };
+  'browsingContext.navigate': {
+    params: Bidi.BrowsingContext.NavigateParameters;
+    returnType: Bidi.BrowsingContext.NavigateResult;
+  };
 
-interface CommandResponse {
-  id: number;
-  result: object;
-}
-
-interface ErrorResponse {
-  id: number;
-  error: string;
-  message: string;
-  stacktrace?: string;
-}
-
-interface Event {
-  method: string;
-  params: object;
+  'session.new': {
+    params: {capabilities?: Record<any, unknown>}; // TODO: Update Types in chromium bidi
+    returnType: {sessionId: string};
+  };
+  'session.status': {
+    params: object;
+    returnType: Bidi.Session.StatusResult;
+  };
+  'session.subscribe': {
+    params: Bidi.Session.SubscribeParameters;
+    returnType: Bidi.Session.SubscribeResult;
+  };
+  'session.unsubscribe': {
+    params: Bidi.Session.SubscribeParameters;
+    returnType: Bidi.Session.UnsubscribeResult;
+  };
 }
 
 /**
@@ -55,6 +84,7 @@ export class Connection extends EventEmitter {
   #lastId = 0;
   #closed = false;
   #callbacks: Map<number, ConnectionCallback> = new Map();
+  #contexts: Map<string, Context> = new Map();
 
   constructor(transport: ConnectionTransport, delay = 0) {
     super();
@@ -69,13 +99,20 @@ export class Connection extends EventEmitter {
     return this.#closed;
   }
 
-  send(method: string, params: object): Promise<CommandResponse['result']> {
+  context(contextId: string): Context | null {
+    return this.#contexts.get(contextId) || null;
+  }
+
+  send<T extends keyof Commands>(
+    method: T,
+    params: Commands[T]['params']
+  ): Promise<Commands[T]['returnType']> {
     const id = ++this.#lastId;
     const stringifiedMessage = JSON.stringify({
       id,
       method,
       params,
-    } as Command);
+    } as Bidi.Message.CommandRequest);
     debugProtocolSend(stringifiedMessage);
     this.#transport.send(stringifiedMessage);
     return new Promise((resolve, reject) => {
@@ -99,9 +136,9 @@ export class Connection extends EventEmitter {
     }
     debugProtocolReceive(message);
     const object = JSON.parse(message) as
-      | Event
-      | ErrorResponse
-      | CommandResponse;
+      | Bidi.Message.CommandResponse
+      | Bidi.Message.EventMessage;
+
     if ('id' in object) {
       const callback = this.#callbacks.get(object.id);
       // Callbacks could be all rejected if someone has called `.dispose()`.
@@ -112,10 +149,24 @@ export class Connection extends EventEmitter {
             createProtocolError(callback.error, callback.method, object)
           );
         } else {
-          callback.resolve(object.result);
+          if (callback.method === 'browsingContext.create') {
+            this.#contexts.set(
+              object.result.context,
+              new Context(this, object.result)
+            );
+          }
+          callback.resolve(object);
         }
       }
     } else {
+      let context: Context | undefined;
+      if ('context' in object.params) {
+        context = this.#contexts.get(object.params.context);
+      } else if ('source' in object.params && !!object.params.source.context) {
+        context = this.#contexts.get(object.params.source.context);
+      }
+      context?.emit(object.method, object.params);
+
       this.emit(object.method, object.params);
     }
   }
@@ -154,10 +205,13 @@ function rewriteError(
   return error;
 }
 
+/**
+ * @internal
+ */
 function createProtocolError(
   error: ProtocolError,
   method: string,
-  object: ErrorResponse
+  object: Bidi.Message.ErrorResult
 ): Error {
   let message = `Protocol error (${method}): ${object.error} ${object.message}`;
   if (object.stacktrace) {

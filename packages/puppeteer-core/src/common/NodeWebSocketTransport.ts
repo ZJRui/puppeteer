@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 import NodeWebSocket from 'ws';
+
 import {ConnectionTransport} from '../common/ConnectionTransport.js';
 import {packageVersion} from '../generated/version.js';
 
@@ -21,7 +22,10 @@ import {packageVersion} from '../generated/version.js';
  * @internal
  */
 export class NodeWebSocketTransport implements ConnectionTransport {
-  static create(url: string): Promise<NodeWebSocketTransport> {
+  static create(
+    url: string,
+    headers?: Record<string, string>
+  ): Promise<NodeWebSocketTransport> {
     return new Promise((resolve, reject) => {
       const ws = new NodeWebSocket(url, [], {
         followRedirects: true,
@@ -29,6 +33,7 @@ export class NodeWebSocketTransport implements ConnectionTransport {
         maxPayload: 256 * 1024 * 1024, // 256Mb
         headers: {
           'User-Agent': `Puppeteer ${packageVersion}`,
+          ...headers,
         },
       });
 

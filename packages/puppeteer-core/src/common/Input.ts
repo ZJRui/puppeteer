@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
+import {Protocol} from 'devtools-protocol';
+
+import {Point} from '../api/ElementHandle.js';
 import {assert} from '../util/assert.js';
+
 import {CDPSession} from './Connection.js';
 import {_keyDefinitions, KeyDefinition, KeyInput} from './USKeyboardLayout.js';
-import {Protocol} from 'devtools-protocol';
-import {Point} from './JSHandle.js';
 
 type KeyDescription = Required<
   Pick<KeyDefinition, 'keyCode' | 'key' | 'text' | 'code' | 'location'>
@@ -104,11 +106,16 @@ export class Keyboard {
    * See {@link KeyInput} for a list of all key names.
    *
    * @param options - An object of options. Accepts text which, if specified,
-   * generates an input event with this text.
+   * generates an input event with this text. Accepts commands which, if specified,
+   * is the commands of keyboard shortcuts,
+   * see {@link https://source.chromium.org/chromium/chromium/src/+/main:third_party/blink/renderer/core/editing/commands/editor_command_names.h | Chromium Source Code} for valid command names.
    */
   async down(
     key: KeyInput,
-    options: {text?: string} = {text: undefined}
+    options: {text?: string; commands?: string[]} = {
+      text: undefined,
+      commands: [],
+    }
   ): Promise<void> {
     const description = this.#keyDescriptionForString(key);
 
@@ -128,6 +135,7 @@ export class Keyboard {
       autoRepeat,
       location: description.location,
       isKeypad: description.location === 3,
+      commands: options.commands,
     });
   }
 
@@ -304,11 +312,13 @@ export class Keyboard {
    * @param options - An object of options. Accepts text which, if specified,
    * generates an input event with this text. Accepts delay which,
    * if specified, is the time to wait between `keydown` and `keyup` in milliseconds.
-   * Defaults to 0.
+   * Defaults to 0. Accepts commands which, if specified,
+   * is the commands of keyboard shortcuts,
+   * see {@link https://source.chromium.org/chromium/chromium/src/+/main:third_party/blink/renderer/core/editing/commands/editor_command_names.h | Chromium Source Code} for valid command names.
    */
   async press(
     key: KeyInput,
-    options: {delay?: number; text?: string} = {}
+    options: {delay?: number; text?: string; commands?: string[]} = {}
   ): Promise<void> {
     const {delay = null} = options;
     await this.down(key, options);
@@ -468,18 +478,14 @@ export class Mouse {
     options: MouseOptions & {delay?: number} = {}
   ): Promise<void> {
     const {delay = null} = options;
+    await this.move(x, y);
+    await this.down(options);
     if (delay !== null) {
-      await this.move(x, y);
-      await this.down(options);
       await new Promise(f => {
         return setTimeout(f, delay);
       });
-      await this.up(options);
-    } else {
-      await this.move(x, y);
-      await this.down(options);
-      await this.up(options);
     }
+    await this.up(options);
   }
 
   /**
@@ -662,12 +668,40 @@ export class Touchscreen {
    * @param y - Vertical position of the tap.
    */
   async tap(x: number, y: number): Promise<void> {
+    await this.touchStart(x, y);
+    await this.touchEnd();
+  }
+
+  /**
+   * Dispatches a `touchstart` event.
+   * @param x - Horizontal position of the tap.
+   * @param y - Vertical position of the tap.
+   */
+  async touchStart(x: number, y: number): Promise<void> {
     const touchPoints = [{x: Math.round(x), y: Math.round(y)}];
     await this.#client.send('Input.dispatchTouchEvent', {
       type: 'touchStart',
       touchPoints,
       modifiers: this.#keyboard._modifiers,
     });
+  }
+  /**
+   * Dispatches a `touchMove` event.
+   * @param x - Horizontal position of the move.
+   * @param y - Vertical position of the move.
+   */
+  async touchMove(x: number, y: number): Promise<void> {
+    const movePoints = [{x: Math.round(x), y: Math.round(y)}];
+    await this.#client.send('Input.dispatchTouchEvent', {
+      type: 'touchMove',
+      touchPoints: movePoints,
+      modifiers: this.#keyboard._modifiers,
+    });
+  }
+  /**
+   * Dispatches a `touchend` event.
+   */
+  async touchEnd(): Promise<void> {
     await this.#client.send('Input.dispatchTouchEvent', {
       type: 'touchEnd',
       touchPoints: [],

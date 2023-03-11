@@ -16,9 +16,10 @@
 import {existsSync} from 'fs';
 import os, {tmpdir} from 'os';
 import {join} from 'path';
+
 import {Browser} from '../api/Browser.js';
 import {Product} from '../common/Product.js';
-import {BrowserFetcher} from './BrowserFetcher.js';
+
 import {
   BrowserLaunchArgumentOptions,
   ChromeReleaseChannel,
@@ -38,6 +39,11 @@ export class ProductLauncher {
    * @internal
    */
   puppeteer: PuppeteerNode;
+
+  /**
+   * @internal
+   */
+  protected actualBrowserRevision?: string;
 
   /**
    * @internal
@@ -64,6 +70,15 @@ export class ProductLauncher {
   defaultArgs(object: BrowserLaunchArgumentOptions): string[];
   defaultArgs(): string[] {
     throw new Error('Not implemented');
+  }
+
+  /**
+   * Set only for Firefox, after the launcher resolves the `latest` revision to
+   * the actual revision.
+   * @internal
+   */
+  getActualBrowserRevision(): string | undefined {
+    return this.actualBrowserRevision;
   }
 
   /**
@@ -100,7 +115,7 @@ export class ProductLauncher {
       return ubuntuChromiumPath;
     }
 
-    const browserFetcher = new BrowserFetcher({
+    const browserFetcher = this.puppeteer.createBrowserFetcher({
       product: this.product,
       path: this.puppeteer.defaultDownloadPath!,
     });

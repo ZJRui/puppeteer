@@ -1,4 +1,4 @@
-# Puppeteer unit tests
+# Puppeteer tests
 
 Unit tests in Puppeteer are written using [Mocha] as the test runner and [Expect] as the assertions library.
 
@@ -25,19 +25,11 @@ The best place to look is an existing test to see how they use the helpers.
 
 ## Skipping tests in specific conditions
 
-Tests that are not expected to pass in Firefox can be skipped. You can skip an individual test by using `itFailsFirefox` rather than `it`. Similarly you can skip a describe block with `describeFailsFirefox`.
-
-There is also `describeChromeOnly` and `itChromeOnly` which will only execute the test if running in Chromium. Note that this is different from `describeFailsFirefox`: the goal is to get any `FailsFirefox` calls passing in Firefox, whereas `describeChromeOnly` should be used to test behaviour that will only ever apply in Chromium.
-
-There are also tests that assume a normal install flow, with browser binaries ending up in `.local-<browser>`, for example. Such tests are skipped with
-`itOnlyRegularInstall` which checks `BINARY` and `PUPPETEER_ALT_INSTALL` environment variables.
-
-[mocha]: https://mochajs.org/
-[expect]: https://www.npmjs.com/package/expect
+To skip tests edit the [TestExpectations](https://github.com/puppeteer/puppeteer/blob/main/test/TestExpectations.json) file. See [test runner documentation](https://github.com/puppeteer/puppeteer/tree/main/tools/mochaRunner) for more details.
 
 ## Running tests
 
-- To run all tests:
+- To run all tests applicable for your platform:
 
 ```bash
 npm test
@@ -46,8 +38,24 @@ npm test
 - **Important**: don't forget to first build the code if you're testing local changes:
 
 ```bash
-npm run build:test && npm test
+npm run build --workspace=@puppeteer-test/test && npm test
 ```
+
+### CLI options
+
+| Description                                                       | Option           | Type    |
+| ----------------------------------------------------------------- | ---------------- | ------- |
+| Do not generate coverage report                                   | --no-coverage    | boolean |
+| Do not generate suggestion for updating TestExpectation.json file | --no-suggestions | boolean |
+| Specify a file to which to save run data                          | --save-stats-to  | string  |
+| Specify a file with a custom Mocha reporter                       | --reporter       | string  |
+| Number of times to retry failed tests.                            | --retries        | number  |
+| Timeout threshold value.                                          | --timeout        | number  |
+| Tell Mocha to not run test files in parallel                      | --no-parallel    | boolean |
+| Generate full stacktrace upon failure                             | --fullTrace      | boolean |
+| Name of the Test suit defined in TestSuites.json                  | --test-suite     | string  |
+
+### Helpful information
 
 - To run a specific test, substitute the `it` with `it.only`:
 
@@ -60,12 +68,11 @@ npm run build:test && npm test
   });
 ```
 
-- To disable a specific test, substitute the `it` with `xit` (mnemonic rule: '_cross it_'):
+- To disable a specific test, substitute the `it` with `it.skip`:
 
 ```ts
   ...
-  // Using "xit" to skip specific test
-  xit('should work', async function({server, page}) {
+  it.skip('should work', async function({server, page}) {
     const {server, page} = getTestState();
     const response = await page.goto(server.EMPTY_PAGE);
     expect(response.ok).toBe(true);
@@ -83,3 +90,6 @@ npm run test:chrome:headful
 ```bash
 BINARY=<path-to-executable> npm run test:chrome:headless # Or npm run test:firefox
 ```
+
+[mocha]: https://mochajs.org/
+[expect]: https://www.npmjs.com/package/expect

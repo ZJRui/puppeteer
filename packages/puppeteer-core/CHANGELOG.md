@@ -2,6 +2,150 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [19.7.4](https://github.com/puppeteer/puppeteer/compare/puppeteer-core-v19.7.3...puppeteer-core-v19.7.4) (2023-03-10)
+
+
+### Bug Fixes
+
+* call _detach on disconnect ([#9807](https://github.com/puppeteer/puppeteer/issues/9807)) ([bc1a04d](https://github.com/puppeteer/puppeteer/commit/bc1a04def8f699ad245c12ec69ac176e3e7e888d))
+* restore rimraf for puppeteer-core code ([#9815](https://github.com/puppeteer/puppeteer/issues/9815)) ([cefc4ea](https://github.com/puppeteer/puppeteer/commit/cefc4eab4750d2c1209eb36ca44f6963a4a6bf4c))
+* update troubleshooting guide links in errors ([#9821](https://github.com/puppeteer/puppeteer/issues/9821)) ([0165f06](https://github.com/puppeteer/puppeteer/commit/0165f06deef9e45862fd127a205ade5ad30ddaa3))
+
+## [19.7.3](https://github.com/puppeteer/puppeteer/compare/puppeteer-core-v19.7.2...puppeteer-core-v19.7.3) (2023-03-06)
+
+
+### Bug Fixes
+
+* update dependencies ([#9781](https://github.com/puppeteer/puppeteer/issues/9781)) ([364b23f](https://github.com/puppeteer/puppeteer/commit/364b23f8b5c7b04974f233c58e5ded9a8f912ff2))
+
+## [19.7.2](https://github.com/puppeteer/puppeteer/compare/puppeteer-core-v19.7.1...puppeteer-core-v19.7.2) (2023-02-20)
+
+
+### Bug Fixes
+
+* bump chromium-bidi to a version that does not declare mitt as a peer dependency ([#9701](https://github.com/puppeteer/puppeteer/issues/9701)) ([82916c1](https://github.com/puppeteer/puppeteer/commit/82916c102b2c399093ba9019e272207b5ce81849))
+
+## [19.7.1](https://github.com/puppeteer/puppeteer/compare/puppeteer-core-v19.7.0...puppeteer-core-v19.7.1) (2023-02-15)
+
+
+### Bug Fixes
+
+* fix circularity on JSHandle interface ([#9661](https://github.com/puppeteer/puppeteer/issues/9661)) ([eb13863](https://github.com/puppeteer/puppeteer/commit/eb138635d661d3cdaf2940959fece5aca482178a))
+* make chromium-bidi an opt peer dep ([#9667](https://github.com/puppeteer/puppeteer/issues/9667)) ([c6054ac](https://github.com/puppeteer/puppeteer/commit/c6054ac1a56c08ee7bf01321878699b7b4ab4e0b))
+
+## [19.7.0](https://github.com/puppeteer/puppeteer/compare/puppeteer-core-v19.6.3...puppeteer-core-v19.7.0) (2023-02-13)
+
+
+### Features
+
+* add touchstart, touchmove and touchend methods ([#9622](https://github.com/puppeteer/puppeteer/issues/9622)) ([c8bb11a](https://github.com/puppeteer/puppeteer/commit/c8bb11adfcf1537032730a91baa3c36a6e324926))
+* **chromium:** roll to Chromium 111.0.5556.0 (r1095492) ([#9656](https://github.com/puppeteer/puppeteer/issues/9656)) ([df59d01](https://github.com/puppeteer/puppeteer/commit/df59d010c20644da06eb4c4e28a11c4eea164aba))
+
+
+### Bug Fixes
+
+* `page.goto` error throwing on 40x/50x responses with an empty body ([#9523](https://github.com/puppeteer/puppeteer/issues/9523)) ([#9577](https://github.com/puppeteer/puppeteer/issues/9577)) ([ddb0cc1](https://github.com/puppeteer/puppeteer/commit/ddb0cc174d2a14c0948dcdaf9bae78620937c667))
+
+## [19.6.3](https://github.com/puppeteer/puppeteer/compare/puppeteer-core-v19.6.2...puppeteer-core-v19.6.3) (2023-02-01)
+
+
+### Bug Fixes
+
+* ignore not found contexts for console messages ([#9595](https://github.com/puppeteer/puppeteer/issues/9595)) ([390685b](https://github.com/puppeteer/puppeteer/commit/390685bbe52c22b686fc0e3119b4ac7b1073c581))
+* restore WaitTask terminate  condition ([#9612](https://github.com/puppeteer/puppeteer/issues/9612)) ([e16cbc6](https://github.com/puppeteer/puppeteer/commit/e16cbc6626cffd40d0caa30801620e7293455006))
+
+## [19.6.2](https://github.com/puppeteer/puppeteer/compare/puppeteer-core-v19.6.1...puppeteer-core-v19.6.2) (2023-01-27)
+
+
+### Bug Fixes
+
+* atomically get Puppeteer utilities ([#9597](https://github.com/puppeteer/puppeteer/issues/9597)) ([050a7b0](https://github.com/puppeteer/puppeteer/commit/050a7b062415ebaf10bcb71c405143eacc4e5d4b))
+
+## [19.6.1](https://github.com/puppeteer/puppeteer/compare/puppeteer-core-v19.6.0...puppeteer-core-v19.6.1) (2023-01-26)
+
+
+### Bug Fixes
+
+* don't clean up previous browser versions ([#9568](https://github.com/puppeteer/puppeteer/issues/9568)) ([344bc2a](https://github.com/puppeteer/puppeteer/commit/344bc2af62e4068fe2cb8162d4b6c8242aac843b)), closes [#9533](https://github.com/puppeteer/puppeteer/issues/9533)
+* mimic rejection for PuppeteerUtil on early call ([#9589](https://github.com/puppeteer/puppeteer/issues/9589)) ([1980de9](https://github.com/puppeteer/puppeteer/commit/1980de91a161523c7098a79919b20e6d8d2e5d81))
+* **revert:** use LazyArg for puppeteer utilities ([#9590](https://github.com/puppeteer/puppeteer/issues/9590)) ([6edd996](https://github.com/puppeteer/puppeteer/commit/6edd99676827de2c83f7a858e4f903b1c34e7d35))
+* use LazyArg for puppeteer utilities ([#9575](https://github.com/puppeteer/puppeteer/issues/9575)) ([496658f](https://github.com/puppeteer/puppeteer/commit/496658f02945b53096483f36cb3d64556cff045e))
+
+## [19.6.0](https://github.com/puppeteer/puppeteer/compare/puppeteer-core-v19.5.2...puppeteer-core-v19.6.0) (2023-01-23)
+
+
+### Features
+
+* **chromium:** roll to Chromium 110.0.5479.0 (r1083080) ([#9500](https://github.com/puppeteer/puppeteer/issues/9500)) ([06e816b](https://github.com/puppeteer/puppeteer/commit/06e816bbfa7b9ca84284929f654de7288c51169d)), closes [#9470](https://github.com/puppeteer/puppeteer/issues/9470)
+* **page:** Adding support for referrerPolicy in `page.goto` ([#9561](https://github.com/puppeteer/puppeteer/issues/9561)) ([e3d69ec](https://github.com/puppeteer/puppeteer/commit/e3d69ec554beeac37bd206a21921d2fed3cb968c))
+
+
+### Bug Fixes
+
+* firefox revision resolution should not update chrome revision ([#9507](https://github.com/puppeteer/puppeteer/issues/9507)) ([f59bbf4](https://github.com/puppeteer/puppeteer/commit/f59bbf4014644dec6f395713e8403939aebe06ea)), closes [#9461](https://github.com/puppeteer/puppeteer/issues/9461)
+* improve screenshot method types ([#9529](https://github.com/puppeteer/puppeteer/issues/9529)) ([6847f88](https://github.com/puppeteer/puppeteer/commit/6847f8835f28e97edba6fce76a4cbf85561482b9))
+
+## [19.5.2](https://github.com/puppeteer/puppeteer/compare/puppeteer-core-v19.5.1...puppeteer-core-v19.5.2) (2023-01-11)
+
+
+### Bug Fixes
+
+* make sure browser fetcher in launchers uses configuration ([#9493](https://github.com/puppeteer/puppeteer/issues/9493)) ([df55439](https://github.com/puppeteer/puppeteer/commit/df554397b51e97aea2765b325f9a887b50b9263a)), closes [#9470](https://github.com/puppeteer/puppeteer/issues/9470)
+
+## [19.5.1](https://github.com/puppeteer/puppeteer/compare/puppeteer-core-v19.5.0...puppeteer-core-v19.5.1) (2023-01-11)
+
+
+### Bug Fixes
+
+* use puppeteer node for installation script ([#9489](https://github.com/puppeteer/puppeteer/issues/9489)) ([9bf90d9](https://github.com/puppeteer/puppeteer/commit/9bf90d9f4b5aeab06f8b433714712cad3259d36e))
+
+## [19.5.0](https://github.com/puppeteer/puppeteer/compare/puppeteer-core-v19.4.1...puppeteer-core-v19.5.0) (2023-01-05)
+
+
+### Features
+
+* add element validation ([#9352](https://github.com/puppeteer/puppeteer/issues/9352)) ([c7a063a](https://github.com/puppeteer/puppeteer/commit/c7a063a15274856184356e15f2ae4be41191d309))
+
+
+### Bug Fixes
+
+* **puppeteer-core:** target interceptor is not async ([#9430](https://github.com/puppeteer/puppeteer/issues/9430)) ([e3e9cc6](https://github.com/puppeteer/puppeteer/commit/e3e9cc622ac32f2067b6e74b5e8706c63169a157))
+
+## [19.4.1](https://github.com/puppeteer/puppeteer/compare/puppeteer-core-v19.4.0...puppeteer-core-v19.4.1) (2022-12-16)
+
+
+### Bug Fixes
+
+* improve a11y snapshot handling if the tree is not correct ([#9405](https://github.com/puppeteer/puppeteer/issues/9405)) ([02fe501](https://github.com/puppeteer/puppeteer/commit/02fe50194e60bd14c3a82539473a0313ab88c766)), closes [#9404](https://github.com/puppeteer/puppeteer/issues/9404)
+* remove oopif expectations and fix oopif flakiness ([#9375](https://github.com/puppeteer/puppeteer/issues/9375)) ([810e0cd](https://github.com/puppeteer/puppeteer/commit/810e0cd74ecef353cfa43746c18bd5f580a3233d))
+
+## [19.4.0](https://github.com/puppeteer/puppeteer/compare/puppeteer-core-v19.3.0...puppeteer-core-v19.4.0) (2022-12-07)
+
+
+### Features
+
+* ability to send headers via ws connection to browser in node.js environment ([#9314](https://github.com/puppeteer/puppeteer/issues/9314)) ([937fffa](https://github.com/puppeteer/puppeteer/commit/937fffaedc340ea12d5f6636d3ba6598cb22e397)), closes [#7218](https://github.com/puppeteer/puppeteer/issues/7218)
+* **chromium:** roll to Chromium 109.0.5412.0 (r1069273) ([#9364](https://github.com/puppeteer/puppeteer/issues/9364)) ([1875da6](https://github.com/puppeteer/puppeteer/commit/1875da61916df1fbcf98047858c01075bd9af189)), closes [#9233](https://github.com/puppeteer/puppeteer/issues/9233)
+* **puppeteer-core:** keydown supports commands ([#9357](https://github.com/puppeteer/puppeteer/issues/9357)) ([b7ebc5d](https://github.com/puppeteer/puppeteer/commit/b7ebc5d9bb9b9940ffdf470e51d007f709587d40))
+
+
+### Bug Fixes
+
+* **puppeteer-core:** avoid type instantiation errors ([#9370](https://github.com/puppeteer/puppeteer/issues/9370)) ([17f31a9](https://github.com/puppeteer/puppeteer/commit/17f31a9ee408ca5a08fe6dbceb8915e710156bd3)), closes [#9369](https://github.com/puppeteer/puppeteer/issues/9369)
+
+## [19.3.0](https://github.com/puppeteer/puppeteer/compare/puppeteer-core-v19.2.2...puppeteer-core-v19.3.0) (2022-11-23)
+
+
+### Features
+
+* **puppeteer-core:** Infer element type from complex selector ([#9253](https://github.com/puppeteer/puppeteer/issues/9253)) ([bef1061](https://github.com/puppeteer/puppeteer/commit/bef1061c064e5135d86a48fffd7278f3e7f4a29e))
+* **puppeteer-core:** update Chrome launcher flags ([#9239](https://github.com/puppeteer/puppeteer/issues/9239)) ([ae87bfc](https://github.com/puppeteer/puppeteer/commit/ae87bfc2b4361556e3660a1de2c6db348ce663ae))
+
+
+### Bug Fixes
+
+* remove boundary conditions for visibility ([#9249](https://github.com/puppeteer/puppeteer/issues/9249)) ([e003513](https://github.com/puppeteer/puppeteer/commit/e003513c0c049aad38e374a16dc96c3e54ab0de5))
+
 ## [19.2.2](https://github.com/puppeteer/puppeteer/compare/puppeteer-core-v19.2.1...puppeteer-core-v19.2.2) (2022-11-03)
 
 

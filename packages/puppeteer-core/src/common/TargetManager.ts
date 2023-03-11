@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-import Protocol from 'devtools-protocol';
+import {Protocol} from 'devtools-protocol';
+
 import {CDPSession} from './Connection.js';
 import {EventEmitter} from './EventEmitter.js';
 import {Target} from './Target.js';
@@ -33,7 +34,7 @@ export type TargetFactory = (
 export type TargetInterceptor = (
   createdTarget: Target,
   parentTarget: Target | null
-) => Promise<void>;
+) => void;
 
 /**
  * TargetManager encapsulates all interactions with CDP targets and is

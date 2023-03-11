@@ -9,7 +9,7 @@ notifications:chrome 坐上叫弹出的是否允许通知。如果网站弹出�
 #### Signature:
 
 ```typescript
-export declare type Permission =
+export type Permission =
   | 'geolocation'
   | 'midi'
   | 'notifications'

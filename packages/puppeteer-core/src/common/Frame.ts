@@ -15,25 +15,26 @@
  */
 
 import {Protocol} from 'devtools-protocol';
-import {assert} from '../util/assert.js';
+
+import {ElementHandle} from '../api/ElementHandle.js';
+import {Page} from '../api/Page.js';
 import {isErrorLike} from '../util/ErrorLike.js';
+
 import {CDPSession} from './Connection.js';
-import {ElementHandle} from './ElementHandle.js';
 import {ExecutionContext} from './ExecutionContext.js';
 import {FrameManager} from './FrameManager.js';
+import {getQueryHandlerAndSelector} from './GetQueryHandler.js';
 import {HTTPResponse} from './HTTPResponse.js';
 import {MouseButton} from './Input.js';
 import {
   IsolatedWorld,
   IsolatedWorldChart,
-  MAIN_WORLD,
-  PUPPETEER_WORLD,
   WaitForSelectorOptions,
 } from './IsolatedWorld.js';
+import {MAIN_WORLD, PUPPETEER_WORLD} from './IsolatedWorlds.js';
+import {LazyArg} from './LazyArg.js';
 import {LifecycleWatcher, PuppeteerLifeCycleEvent} from './LifecycleWatcher.js';
-import {Page} from '../api/Page.js';
-import {getQueryHandlerAndSelector} from './QueryHandler.js';
-import {EvaluateFunc, HandleFor, NodeFor} from './types.js';
+import {EvaluateFunc, EvaluateFuncWith, HandleFor, NodeFor} from './types.js';
 import {importFS} from './util.js';
 
 /**
@@ -128,7 +129,7 @@ export interface FrameAddStyleTagOptions {
  * An example of dumping frame tree:
  *
  * ```ts
- * const puppeteer = require('puppeteer');
+ * import puppeteer from 'puppeteer';
  *
  * (async () => {
  *   const browser = await puppeteer.launch();
@@ -290,12 +291,16 @@ export class Frame {
     url: string,
     options: {
       referer?: string;
+      referrerPolicy?: string;
       timeout?: number;
       waitUntil?: PuppeteerLifeCycleEvent | PuppeteerLifeCycleEvent[];
     } = {}
   ): Promise<HTTPResponse | null> {
     const {
       referer = this._frameManager.networkManager.extraHTTPHeaders()['referer'],
+      referrerPolicy = this._frameManager.networkManager.extraHTTPHeaders()[
+        'referer-policy'
+      ],
       waitUntil = ['load'],
       timeout = this._frameManager.timeoutSettings.navigationTimeout(),
     } = options;
@@ -308,7 +313,13 @@ export class Frame {
       timeout
     );
     let error = await Promise.race([
-      navigate(this.#client, url, referer, this._id),
+      navigate(
+        this.#client,
+        url,
+        referer,
+        referrerPolicy as Protocol.Page.ReferrerPolicy,
+        this._id
+      ),
       watcher.timeoutOrTerminationPromise(),
     ]);
     if (!error) {
@@ -333,6 +344,7 @@ export class Frame {
       client: CDPSession,
       url: string,
       referrer: string | undefined,
+      referrerPolicy: Protocol.Page.ReferrerPolicy | undefined,
       frameId: string
     ): Promise<Error | null> {
       try {
@@ -340,8 +352,12 @@ export class Frame {
           url,
           referrer,
           frameId,
+          referrerPolicy,
         });
         ensureNewDocumentNavigation = !!response.loaderId;
+        if (response.errorText === 'net::ERR_HTTP_RESPONSE_CODE_FAILURE') {
+          return null;
+        }
         return response.errorText
           ? new Error(`${response.errorText} at ${url}`)
           : null;
@@ -503,9 +519,10 @@ export class Frame {
   async $eval<
     Selector extends string,
     Params extends unknown[],
-    Func extends EvaluateFunc<
-      [ElementHandle<NodeFor<Selector>>, ...Params]
-    > = EvaluateFunc<[ElementHandle<NodeFor<Selector>>, ...Params]>
+    Func extends EvaluateFuncWith<NodeFor<Selector>, Params> = EvaluateFuncWith<
+      NodeFor<Selector>,
+      Params
+    >
   >(
     selector: Selector,
     pageFunction: Func | string,
@@ -537,9 +554,10 @@ export class Frame {
   async $$eval<
     Selector extends string,
     Params extends unknown[],
-    Func extends EvaluateFunc<
-      [Array<NodeFor<Selector>>, ...Params]
-    > = EvaluateFunc<[Array<NodeFor<Selector>>, ...Params]>
+    Func extends EvaluateFuncWith<
+      Array<NodeFor<Selector>>,
+      Params
+    > = EvaluateFuncWith<Array<NodeFor<Selector>>, Params>
   >(
     selector: Selector,
     pageFunction: Func | string,
@@ -570,7 +588,7 @@ export class Frame {
    * @example
    *
    * ```ts
-   * const puppeteer = require('puppeteer');
+   * import puppeteer from 'puppeteer';
    *
    * (async () => {
    *   const browser = await puppeteer.launch();
@@ -601,10 +619,9 @@ export class Frame {
     selector: Selector,
     options: WaitForSelectorOptions = {}
   ): Promise<ElementHandle<NodeFor<Selector>> | null> {
-    const {updatedSelector, queryHandler} =
+    const {updatedSelector, QueryHandler} =
       getQueryHandlerAndSelector(selector);
-    assert(queryHandler.waitFor, 'Query handler does not support waiting');
-    return (await queryHandler.waitFor(
+    return (await QueryHandler.waitFor(
       this,
       updatedSelector,
       options
@@ -630,7 +647,7 @@ export class Frame {
    * an XPath.
    *
    * @param xpath - the XPath expression to wait for.
-   * @param options - options to configure the visiblity of the element and how
+   * @param options - options to configure the visibility of the element and how
    * long to wait before timing out.
    */
   async waitForXPath(
@@ -648,7 +665,7 @@ export class Frame {
    * The `waitForFunction` can be used to observe viewport size change:
    *
    * ```ts
-   * const puppeteer = require('puppeteer');
+   * import puppeteer from 'puppeteer';
    *
    * (async () => {
    * .  const browser = await puppeteer.launch();
@@ -828,7 +845,9 @@ export class Frame {
           await promise;
           return script;
         },
-        await this.worlds[PUPPETEER_WORLD].puppeteerUtil,
+        LazyArg.create(context => {
+          return context.puppeteerUtil;
+        }),
         {...options, type, content}
       )
     );
@@ -912,7 +931,9 @@ export class Frame {
           await promise;
           return element;
         },
-        await this.worlds[PUPPETEER_WORLD].puppeteerUtil,
+        LazyArg.create(context => {
+          return context.puppeteerUtil;
+        }),
         options
       )
     );

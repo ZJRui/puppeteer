@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-import {debugError} from './util.js';
-import {isErrorLike} from '../util/ErrorLike.js';
+import {IsPageTargetCallback, TargetFilterCallback} from '../api/Browser.js';
 import {isNode} from '../environment.js';
 import {assert} from '../util/assert.js';
-import {IsPageTargetCallback, TargetFilterCallback} from '../api/Browser.js';
+import {isErrorLike} from '../util/ErrorLike.js';
+
 import {CDPBrowser} from './Browser.js';
 import {Connection} from './Connection.js';
 import {ConnectionTransport} from './ConnectionTransport.js';
 import {getFetch} from './fetch.js';
+import type {ConnectOptions} from './Puppeteer.js';
 import {Viewport} from './PuppeteerViewport.js';
+import {debugError} from './util.js';
 /**
  * Generic browser options that can be passed when launching any browser or when
  * connecting to an existing browser instance.
@@ -73,11 +75,7 @@ const getWebSocketTransportClass = async () => {
  * @internal
  */
 export async function _connectToCDPBrowser(
-  options: BrowserConnectOptions & {
-    browserWSEndpoint?: string;
-    browserURL?: string;
-    transport?: ConnectionTransport;
-  }
+  options: BrowserConnectOptions & ConnectOptions
 ): Promise<CDPBrowser> {
   const {
     browserWSEndpoint,
@@ -85,6 +83,7 @@ export async function _connectToCDPBrowser(
     ignoreHTTPSErrors = false,
     defaultViewport = {width: 800, height: 600},
     transport,
+    headers = {},
     slowMo = 0,
     targetFilter,
     _isPageTarget: isPageTarget,
@@ -102,7 +101,7 @@ export async function _connectToCDPBrowser(
   } else if (browserWSEndpoint) {
     const WebSocketClass = await getWebSocketTransportClass();
     const connectionTransport: ConnectionTransport =
-      await WebSocketClass.create(browserWSEndpoint);
+      await WebSocketClass.create(browserWSEndpoint, headers);
     connection = new Connection(browserWSEndpoint, connectionTransport, slowMo);
   } else if (browserURL) {
     const connectionURL = await getWSEndpoint(browserURL);

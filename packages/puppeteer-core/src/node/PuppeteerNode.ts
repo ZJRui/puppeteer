@@ -15,16 +15,18 @@
  */
 
 import {join} from 'path';
+
 import {Browser} from '../api/Browser.js';
 import {BrowserConnectOptions} from '../common/BrowserConnector.js';
+import {Configuration} from '../common/Configuration.js';
 import {Product} from '../common/Product.js';
 import {
   CommonPuppeteerSettings,
   ConnectOptions,
   Puppeteer,
 } from '../common/Puppeteer.js';
-import {Configuration} from '../common/Configuration.js';
 import {PUPPETEER_REVISIONS} from '../revisions.js';
+
 import {BrowserFetcher, BrowserFetcherOptions} from './BrowserFetcher.js';
 import {ChromeLauncher} from './ChromeLauncher.js';
 import {FirefoxLauncher} from './FirefoxLauncher.js';
@@ -64,7 +66,7 @@ export interface PuppeteerLaunchOptions
  * The following is a typical example of using Puppeteer to drive automation:
  *
  * ```ts
- * const puppeteer = require('puppeteer');
+ * import puppeteer from 'puppeteer';
  *
  * (async () => {
  *   const browser = await puppeteer.launch();
@@ -217,7 +219,11 @@ export class PuppeteerNode extends Puppeteer {
    * @internal
    */
   get browserRevision(): string {
-    return this.configuration.browserRevision ?? this.defaultBrowserRevision!;
+    return (
+      this.#_launcher?.getActualBrowserRevision() ??
+      this.configuration.browserRevision ??
+      this.defaultBrowserRevision!
+    );
   }
 
   /**
@@ -279,29 +285,36 @@ export class PuppeteerNode extends Puppeteer {
   }
 
   /**
-   * @deprecated If you are using `puppeteer-core`, do not use this method. Just
-   * construct {@link BrowserFetcher} manually.
-   *
    * @param options - Set of configurable options to specify the settings of the
    * BrowserFetcher.
+   *
+   * @remarks
+   * If you are using `puppeteer-core`, do not use this method. Just
+   * construct {@link BrowserFetcher} manually.
    *
    * @returns A new BrowserFetcher instance.
    */
   createBrowserFetcher(
-    options: Partial<BrowserFetcherOptions>
+    options: Partial<BrowserFetcherOptions> = {}
   ): BrowserFetcher {
     const downloadPath = this.defaultDownloadPath;
-    if (downloadPath) {
+    if (!options.path && downloadPath) {
       options.path = downloadPath;
     }
     if (!options.path) {
       throw new Error('A `path` must be specified for `puppeteer-core`.');
     }
-    if (this.configuration.experiments?.macArmChromiumEnabled) {
+    if (
+      !('useMacOSARMBinary' in options) &&
+      this.configuration.experiments?.macArmChromiumEnabled
+    ) {
       options.useMacOSARMBinary = true;
     }
-    if (this.configuration.downloadHost) {
+    if (!('host' in options) && this.configuration.downloadHost) {
       options.host = this.configuration.downloadHost;
+    }
+    if (!('product' in options) && this.configuration.defaultProduct) {
+      options.product = this.configuration.defaultProduct;
     }
     return new BrowserFetcher(options as BrowserFetcherOptions);
   }

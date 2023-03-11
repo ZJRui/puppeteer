@@ -15,7 +15,7 @@
     {
       "id": "chrome-new-headless",
       "platforms": ["linux"],
-      "parameters": ["chrome", "chrome-headless"],
+      "parameters": ["chrome", "new-headless"],
       "expectedLineCoverage": 93
     },
     {
@@ -35,9 +35,15 @@
       "platforms": ["linux"],
       "parameters": ["firefox", "headless", "webDriverBiDi"],
       "expectedLineCoverage": 56
+    },
+    {
+      "id": "chrome-bidi",
+      "platforms": ["linux"],
+      "parameters": ["chrome", "headless", "webDriverBiDi"],
+      "expectedLineCoverage": 56
     }
   ],
-  "parameterDefinitons": {
+  "parameterDefinitions": {
     "chrome": {
       "PUPPETEER_PRODUCT": "chrome"
     },
@@ -50,8 +56,8 @@
     "headful": {
       "HEADLESS": "false"
     },
-    "chrome-headless": {
-      "HEADLESS": "chrome"
+    "new-headless": {
+      "HEADLESS": "new"
     },
     "webDriverBiDi": {
       "PUPPETEER_PROTOCOL": "webDriverBiDi"

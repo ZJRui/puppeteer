@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-import expect from 'expect';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import rimraf from 'rimraf';
 import {promisify} from 'util';
+
+import expect from 'expect';
 import {
   PuppeteerLaunchOptions,
   PuppeteerNode,
 } from 'puppeteer-core/internal/node/PuppeteerNode.js';
+import rimraf from 'rimraf';
+
 import {getTestState} from './mocha-utils.js';
 
-const rmAsync = promisify(rimraf);
 const mkdtempAsync = promisify(fs.mkdtemp);
 
 const TMP_FOLDER = path.join(os.tmpdir(), 'pptr_tmp_folder-');
@@ -239,7 +240,7 @@ describe('headful tests', function () {
       });
       await headlessBrowser.close();
       // This might throw. See https://github.com/puppeteer/puppeteer/issues/2778
-      await rmAsync(userDataDir).catch(() => {});
+      await rimraf(userDataDir).catch(() => {});
       expect(cookie).toBe('foo=true');
     });
     // TODO: Support OOOPIF. @see https://github.com/puppeteer/puppeteer/issues/2548

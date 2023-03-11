@@ -17,11 +17,14 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import {ChildProcess} from 'child_process';
+
 import {Protocol} from 'devtools-protocol';
+
 import {EventEmitter} from '../common/EventEmitter.js';
-import type {Page} from './Page.js'; // TODO: move to ./api
 import type {Target} from '../common/Target.js'; // TODO: move to ./api
+
 import type {BrowserContext} from './BrowserContext.js';
+import type {Page} from './Page.js'; // TODO: move to ./api
 
 /**
  * BrowserContext options.
@@ -182,7 +185,7 @@ export const enum BrowserEmittedEvents {
  * An example of using a {@link Browser} to create a {@link Page}:
  *
  * ```ts
- * const puppeteer = require('puppeteer');
+ * import puppeteer from 'puppeteer';
  *
  * (async () => {
  *   const browser = await puppeteer.launch();
@@ -196,7 +199,7 @@ export const enum BrowserEmittedEvents {
  * An example of disconnecting from and reconnecting to a {@link Browser}:
  *
  * ```ts
- * const puppeteer = require('puppeteer');
+ * import puppeteer from 'puppeteer';
  *
  * (async () => {
  *   const browser = await puppeteer.launch();

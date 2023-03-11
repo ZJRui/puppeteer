@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {ProtocolMapping} from 'devtools-protocol/types/protocol-mapping.js';
+import {Protocol} from 'devtools-protocol';
 
-import {EventEmitter} from './EventEmitter.js';
+import {CDPSession} from './Connection.js';
+import {ProtocolError} from './Errors.js';
 import {Frame} from './Frame.js';
 import {HTTPRequest} from './HTTPRequest.js';
 import {SecurityDetails} from './SecurityDetails.js';
-import {Protocol} from 'devtools-protocol';
-import {ProtocolError} from './Errors.js';
 
 /**
  * @public
@@ -28,13 +27,6 @@ import {ProtocolError} from './Errors.js';
 export interface RemoteAddress {
   ip?: string;
   port?: number;
-}
-
-interface CDPSession extends EventEmitter {
-  send<T extends keyof ProtocolMapping.Commands>(
-    method: T,
-    ...paramArgs: ProtocolMapping.Commands[T]['paramsType']
-  ): Promise<ProtocolMapping.Commands[T]['returnType']>;
 }
 
 /**

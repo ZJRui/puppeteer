@@ -36,11 +36,13 @@ describe('WebDriver BiDi', () => {
     it('should work', async () => {
       const transport = new TestConnectionTransport();
       const connection = new Connection(transport);
-      const responsePromise = connection.send('session.status', {
-        context: 'context',
+      const responsePromise = connection.send('session.new', {
+        capabilities: {
+          proxy: {},
+        },
       });
       expect(transport.sent).toEqual([
-        `{"id":1,"method":"session.status","params":{"context":"context"}}`,
+        `{"id":1,"method":"session.new","params":{"capabilities":{"proxy":{}}}}`,
       ]);
       const id = JSON.parse(transport.sent[0]!).id;
       const rawResponse = {
@@ -51,7 +53,7 @@ describe('WebDriver BiDi', () => {
         JSON.stringify(rawResponse)
       );
       const response = await responsePromise;
-      expect(response).toEqual(rawResponse.result);
+      expect(response).toEqual(rawResponse);
       connection.dispose();
       expect(transport.closed).toBeTruthy();
     });

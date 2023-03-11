@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
+import {ChildProcess} from 'child_process';
+
 import {
   Browser as BrowserBase,
   BrowserCloseCallback,
   BrowserContextOptions,
 } from '../../api/Browser.js';
 import {BrowserContext as BrowserContextBase} from '../../api/BrowserContext.js';
-import {Connection} from './Connection.js';
-import {ChildProcess} from 'child_process';
+
 import {BrowserContext} from './BrowserContext.js';
+import {Connection} from './Connection.js';
 
 /**
  * @internal
@@ -33,7 +35,9 @@ export class Browser extends BrowserBase {
    */
   static async create(opts: Options): Promise<Browser> {
     // TODO: await until the connection is established.
-    (await opts.connection.send('session.new', {})) as {sessionId: string};
+    try {
+      await opts.connection.send('session.new', {});
+    } catch {}
     return new Browser(opts);
   }
 
@@ -52,8 +56,8 @@ export class Browser extends BrowserBase {
   }
 
   override async close(): Promise<void> {
-    await this.#closeCallback?.call(null);
     this.#connection.dispose();
+    await this.#closeCallback?.call(null);
   }
 
   override isConnected(): boolean {

@@ -18,9 +18,11 @@ import * as childProcess from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
-import removeFolder from 'rimraf';
 import {promisify} from 'util';
-import {Connection as BiDiConnection} from '../common/bidi/Connection.js';
+
+import rimraf from 'rimraf';
+
+import type {Connection as BiDiConnection} from '../common/bidi/bidi.js';
 import {Connection} from '../common/Connection.js';
 import {debug} from '../common/Debug.js';
 import {TimeoutError} from '../common/Errors.js';
@@ -34,10 +36,10 @@ import {
 } from '../common/util.js';
 import {assert} from '../util/assert.js';
 import {isErrnoException, isErrorLike} from '../util/ErrorLike.js';
+
 import {LaunchOptions} from './LaunchOptions.js';
 import {PipeTransport} from './PipeTransport.js';
 
-const removeFolderAsync = promisify(removeFolder);
 const renameAsync = promisify(fs.rename);
 const unlinkAsync = promisify(fs.unlink);
 
@@ -123,7 +125,7 @@ export class BrowserRunner {
         // Cleanup as processes exit.
         if (this.#isTempUserDataDir) {
           try {
-            await removeFolderAsync(this.#userDataDir);
+            await rimraf(this.#userDataDir);
             fulfill();
           } catch (error) {
             debugError(error);
@@ -237,7 +239,7 @@ export class BrowserRunner {
     // Attempt to remove temporary profile directory to avoid littering.
     try {
       if (this.#isTempUserDataDir) {
-        removeFolder.sync(this.#userDataDir);
+        rimraf.sync(this.#userDataDir);
       }
     } catch (error) {}
 
@@ -246,6 +248,9 @@ export class BrowserRunner {
     removeEventListeners(this.#listeners);
   }
 
+  /**
+   * @internal
+   */
   async setupWebDriverBiDiConnection(options: {
     timeout: number;
     slowMo: number;
@@ -262,7 +267,10 @@ export class BrowserRunner {
     );
     browserWSEndpoint += '/session';
     const transport = await WebSocketTransport.create(browserWSEndpoint);
-    return new BiDiConnection(transport, slowMo);
+    const BiDi = await import(
+      /* webpackIgnore: true */ '../common/bidi/bidi.js'
+    );
+    return new BiDi.Connection(transport, slowMo);
   }
 
   async setupConnection(options: {
@@ -330,7 +338,7 @@ function waitForWSEndpoint(
               (error ? ' ' + error.message : ''),
             stderr,
             '',
-            'TROUBLESHOOTING: https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md',
+            'TROUBLESHOOTING: https://pptr.dev/troubleshooting',
             '',
           ].join('\n')
         )

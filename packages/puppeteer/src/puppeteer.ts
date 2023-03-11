@@ -14,19 +14,12 @@
  * limitations under the License.
  */
 
-export {Protocol} from 'devtools-protocol';
-export * from 'puppeteer-core/internal/common/Device.js';
-export * from 'puppeteer-core/internal/common/Errors.js';
-export * from 'puppeteer-core/internal/common/PredefinedNetworkConditions.js';
-export * from 'puppeteer-core/internal/common/Puppeteer.js';
-/**
- * @deprecated Use the query handler API defined on {@link Puppeteer}
- */
-export * from 'puppeteer-core/internal/common/QueryHandler.js';
-export * from 'puppeteer-core/internal/node/BrowserFetcher.js';
-export {LaunchOptions} from 'puppeteer-core/internal/node/LaunchOptions.js';
+export {Protocol} from 'puppeteer-core';
+
+export * from 'puppeteer-core/internal/puppeteer-core.js';
 
 import {PuppeteerNode} from 'puppeteer-core/internal/node/PuppeteerNode.js';
+
 import {getConfiguration} from './getConfiguration.js';
 
 const configuration = getConfiguration();
@@ -40,10 +33,25 @@ const puppeteer = new PuppeteerNode({
 });
 
 export const {
+  /**
+   * @public
+   */
   connect,
+  /**
+   * @public
+   */
   createBrowserFetcher,
+  /**
+   * @public
+   */
   defaultArgs,
+  /**
+   * @public
+   */
   executablePath,
+  /**
+   * @public
+   */
   launch,
 } = puppeteer;
 

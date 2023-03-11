@@ -1,11 +1,11 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+
 import {Browser} from '../api/Browser.js';
-import {Browser as BiDiBrowser} from '../common/bidi/Browser.js';
 import {CDPBrowser} from '../common/Browser.js';
 import {assert} from '../util/assert.js';
-import {BrowserFetcher} from './BrowserFetcher.js';
+
 import {BrowserRunner} from './BrowserRunner.js';
 import {
   BrowserLaunchArgumentOptions,
@@ -126,14 +126,17 @@ export class FirefoxLauncher extends ProductLauncher {
     });
 
     if (protocol === 'webDriverBiDi') {
-      let browser;
+      let browser: Browser;
       try {
         const connection = await runner.setupWebDriverBiDiConnection({
           timeout,
           slowMo,
           preferredRevision: this.puppeteer.browserRevision,
         });
-        browser = await BiDiBrowser.create({
+        const BiDi = await import(
+          /* webpackIgnore: true */ '../common/bidi/bidi.js'
+        );
+        browser = await BiDi.Browser.create({
           connection,
           closeCallback: runner.close.bind(runner),
           process: runner.proc,
@@ -189,13 +192,13 @@ export class FirefoxLauncher extends ProductLauncher {
   override executablePath(): string {
     // replace 'latest' placeholder with actual downloaded revision
     if (this.puppeteer.browserRevision === 'latest') {
-      const browserFetcher = new BrowserFetcher({
+      const browserFetcher = this.puppeteer.createBrowserFetcher({
         product: this.product,
         path: this.puppeteer.defaultDownloadPath!,
       });
       const localRevisions = browserFetcher.localRevisions();
       if (localRevisions[0]) {
-        this.puppeteer.configuration.browserRevision = localRevisions[0];
+        this.actualBrowserRevision = localRevisions[0];
       }
     }
     return this.resolveExecutablePath();

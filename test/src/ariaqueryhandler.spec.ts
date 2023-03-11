@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
+import assert from 'assert';
+
 import expect from 'expect';
+import {TimeoutError} from 'puppeteer';
+import type {ElementHandle} from 'puppeteer-core/internal/api/ElementHandle.js';
+
 import {
   getTestState,
   setupTestBrowserHooks,
   setupTestPageAndContextHooks,
 } from './mocha-utils.js';
-
-import {ElementHandle} from 'puppeteer-core/internal/common/ElementHandle.js';
 import utils from './utils.js';
-import assert from 'assert';
-import {TimeoutError} from 'puppeteer';
 
 describe('AriaQueryHandler', () => {
   setupTestBrowserHooks();
@@ -229,7 +230,7 @@ describe('AriaQueryHandler', () => {
       await page.waitForSelector('aria/[role="button"]');
     });
 
-    it('should work for ElementHandler.waitForSelector', async () => {
+    it('should work for ElementHandle.waitForSelector', async () => {
       const {page, server} = getTestState();
       await page.goto(server.EMPTY_PAGE);
       await page.evaluate(() => {

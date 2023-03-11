@@ -15,8 +15,10 @@
  */
 
 import {Protocol} from 'devtools-protocol';
+
+import {ElementHandle} from '../api/ElementHandle.js';
+
 import {CDPSession} from './Connection.js';
-import {ElementHandle} from './ElementHandle.js';
 
 /**
  * Represents a Node and the properties of it that are relevant to Accessibility.
@@ -186,7 +188,7 @@ export class Accessibility {
     let backendNodeId: number | undefined;
     if (root) {
       const {node} = await this.#client.send('DOM.describeNode', {
-        objectId: root.remoteObject().objectId,
+        objectId: root.id,
       });
       backendNodeId = node.backendNodeId;
     }
@@ -564,7 +566,10 @@ class AXNode {
     }
     for (const node of nodeById.values()) {
       for (const childId of node.payload.childIds || []) {
-        node.children.push(nodeById.get(childId)!);
+        const child = nodeById.get(childId);
+        if (child) {
+          node.children.push(child);
+        }
       }
     }
     return nodeById.values().next().value;

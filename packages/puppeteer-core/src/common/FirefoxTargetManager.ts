@@ -14,18 +14,20 @@
  * limitations under the License.
  */
 
-import Protocol from 'devtools-protocol';
-import {assert} from '../util/assert.js';
-import {CDPSession, Connection} from './Connection.js';
-import {Target} from './Target.js';
+import {Protocol} from 'devtools-protocol';
+
 import {TargetFilterCallback} from '../api/Browser.js';
+import {assert} from '../util/assert.js';
+
+import {CDPSession, Connection} from './Connection.js';
+import {EventEmitter} from './EventEmitter.js';
+import {Target} from './Target.js';
 import {
   TargetFactory,
   TargetInterceptor,
   TargetManagerEmittedEvents,
   TargetManager,
 } from './TargetManager.js';
-import {EventEmitter} from './EventEmitter.js';
 
 /**
  * FirefoxTargetManager implements target management using
